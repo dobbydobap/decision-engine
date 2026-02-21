@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware';
-import { createDecision, getUserDecisions, getDecisionById, CreateDecisionSchema, evaluateDecision } from '../services/decision.service';
+import { createDecision, getUserDecisions, getDecisionById, CreateDecisionSchema, evaluateDecision, deleteDecision } from '../services/decision.service';
 
 export const create = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -83,5 +83,23 @@ export const evaluate = async (req: AuthRequest, res: Response): Promise<void> =
     });
   } catch (error: any) {
     res.status(404).json({ error: error.message });
+  }
+};
+
+//handles the HTTP request to delete a decision
+export const remove = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+    const decisionId = req.params.id as string;
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    await deleteDecision(decisionId, userId);
+    res.status(200).json({
+      message: 'Decision and all associated data deleted successfully'
+    });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
 };

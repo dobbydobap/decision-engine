@@ -112,3 +112,14 @@ export const evaluateDecision = async (decisionId: string, userId: string) => {
     rankings: evaluatedOptions
   };
 };
+
+//delete a decision securily 
+export const deleteDecision = async (decisionId: string, userId: string) => {
+  //we reuse our existing function to ensure the user actually owns this decision...
+  await getDecisionById(decisionId, userId);
+  await prisma.decision.delete({
+    where: { id: decisionId },
+  });
+
+  return true;
+};
