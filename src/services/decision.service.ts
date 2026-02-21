@@ -58,3 +58,57 @@ export const getDecisionById = async (decisionId: string, userId: string) => {
 
   return decision;
 };
+
+//calculation engine 
+export const evaluateDecision = async (decisionId: string, userId: string) => {
+  //grab the fully populated decision
+  const decision = await getDecisionById(decisionId, userId);
+
+  //create a map of Criteria IDs to their Weights so we can look them up quickly
+  const criteriaWeights: Record<string, number> = {};
+  decision.criteria.forEach(c => {
+    criteriaWeights[c.id] = c.weight;
+  });
+
+  //calculate the final score for each option
+  const evaluatedOptions = decision.options.map(option => {
+    let totalScore = 0;
+    const scoreBreakdown: any[] = [];
+
+    //Go through every score this option has
+    option.scores.forEach(score => {
+      //Find the weight of the criterion this score belongs to
+      const weight = criteriaWeights[score.criterionId];
+      
+      // If the criterion exists, do the math!
+      if (weight) {
+        const weightedScore = score.value * weight;
+        totalScore += weightedScore;
+
+        //Keeping a record of the math for the frontend to display
+        scoreBreakdown.push({
+          criterionId: score.criterionId,
+          originalValue: score.value,
+          weightApplied: weight,
+          calculatedPoints: weightedScore
+        });
+      }
+    });
+    return {
+      id: option.id,
+      name: option.name,
+      totalScore: totalScore,
+      breakdown: scoreBreakdown
+    };
+  });
+
+  //sorting the options from highest score to lowest score
+  evaluatedOptions.sort((a, b) => b.totalScore - a.totalScore);
+
+  return {
+    decisionId: decision.id,
+    title: decision.title,
+    winner: evaluatedOptions.length > 0 ? evaluatedOptions[0] : null,
+    rankings: evaluatedOptions
+  };
+};

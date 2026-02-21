@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware';
-import { createDecision, getUserDecisions, getDecisionById, CreateDecisionSchema } from '../services/decision.service';
+import { createDecision, getUserDecisions, getDecisionById, CreateDecisionSchema, evaluateDecision } from '../services/decision.service';
 
 export const create = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -59,6 +59,27 @@ export const getOne = async (req: AuthRequest, res: Response): Promise<void> => 
     res.status(200).json({
       message: 'Decision retrieved successfully',
       data: decision
+    });
+  } catch (error: any) {
+    res.status(404).json({ error: error.message });
+  }
+};
+//calculation engine on a specific decision
+export const evaluate = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+    const decisionId = req.params.id as string;
+
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    // Call the Engine!
+    const results = await evaluateDecision(decisionId, userId);
+    
+    res.status(200).json({
+      message: 'Decision evaluated successfully',
+      data: results
     });
   } catch (error: any) {
     res.status(404).json({ error: error.message });
